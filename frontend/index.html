@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sistem Admin Gym</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Web Admin Internal</p>
+        <h1 id="appTitle">Sistem Admin Gym</h1>
+        <p class="subtitle">Input pelanggan masuk/keluar dari HP atau laptop. Data audit otomatis masuk ke Google Sheet.</p>
+      </div>
+      <div class="clock-card">
+        <span id="todayText">Hari ini</span>
+        <strong id="clockText">--:--:--</strong>
+      </div>
+    </header>
+
+    <section id="setupWarning" class="setup-warning hidden">
+      <div>
+        <strong>Backend belum disambungkan.</strong>
+        <p>Masukkan URL Web App Google Apps Script di <code>frontend/config.js</code>, atau tempel sementara di pengaturan bawah.</p>
+      </div>
+      <button type="button" class="secondary-btn" id="openSettingsBtn">Atur URL</button>
+    </section>
+
+    <main class="grid-layout">
+      <section class="card input-card">
+        <div class="card-header">
+          <div>
+            <p class="eyebrow">Form Input</p>
+            <h2>Catat Masuk / Keluar</h2>
+          </div>
+          <span class="pill">Audit Log</span>
+        </div>
+
+        <form id="gymForm" autocomplete="off">
+          <input type="hidden" name="action" value="saveLog" />
+
+          <label>
+            Nama Admin / Pegawai
+            <input type="text" name="admin" id="adminInput" placeholder="Contoh: Rani" required />
+          </label>
+
+          <label>
+            Nama Pelanggan
+            <input type="text" name="customerName" id="customerNameInput" placeholder="Contoh: Budi Santoso" required />
+          </label>
+
+          <div class="two-col">
+            <label>
+              Nomor Kunci
+              <input type="number" name="keyNumber" id="keyNumberInput" placeholder="Contoh: 12" min="1" required />
+            </label>
+            <label>
+              Status
+              <select name="status" id="statusInput" required>
+                <option value="Masuk">Masuk</option>
+                <option value="Keluar">Keluar</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="primary-btn" id="submitBtn">Simpan ke Google Sheet</button>
+            <button type="button" class="secondary-btn" id="resetBtn">Bersihkan</button>
+          </div>
+        </form>
+
+        <iframe id="submitFrame" name="hidden-submit-frame" title="Hidden submit frame" class="hidden-frame"></iframe>
+      </section>
+
+      <aside class="side-stack">
+        <section class="card stats-card">
+          <div class="card-header compact">
+            <div>
+              <p class="eyebrow">Dashboard</p>
+              <h2>Ringkasan</h2>
+            </div>
+            <button type="button" class="icon-btn" id="refreshBtn" title="Refresh data">↻</button>
+          </div>
+          <div class="stats-grid">
+            <div>
+              <span>Total Kunci</span>
+              <strong id="totalKeysText">0</strong>
+            </div>
+            <div>
+              <span>Dipakai</span>
+              <strong id="usedKeysText">0</strong>
+            </div>
+            <div>
+              <span>Kosong</span>
+              <strong id="emptyKeysText">0</strong>
+            </div>
+            <div>
+              <span>Member Lifetime</span>
+              <strong id="memberCountText">0</strong>
+            </div>
+          </div>
+          <p class="realtime-note" id="autoRefreshText">Auto-refresh aktif.</p>
+          <p class="muted mini" id="lastUpdatedText">Belum ada data terbaru.</p>
+        </section>
+
+        <section class="card settings-card" id="settingsCard">
+          <div class="card-header compact">
+            <div>
+              <p class="eyebrow">Pengaturan</p>
+              <h2>URL Backend</h2>
+            </div>
+          </div>
+          <p class="muted">Kalau belum edit <code>config.js</code>, tempel URL Web App Apps Script di sini.</p>
+          <label>
+            Apps Script Web App URL
+            <input type="url" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec" />
+          </label>
+          <div class="form-actions small-actions">
+            <button type="button" class="secondary-btn" id="saveScriptUrlBtn">Simpan URL</button>
+            <button type="button" class="ghost-btn" id="clearScriptUrlBtn">Reset</button>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <section class="card data-card">
+      <div class="card-header table-header">
+        <div>
+          <p class="eyebrow">Monitoring</p>
+          <h2 id="tableTitle">Daftar Kunci</h2>
+        </div>
+        <div class="view-actions">
+          <div class="tab-group" role="tablist" aria-label="Pilih data">
+            <button type="button" class="tab-btn active" id="keysViewBtn">Daftar Kunci</button>
+            <button type="button" class="tab-btn" id="membersViewBtn">Member Lifetime</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="keysPanel">
+        <div class="toolbar">
+          <input type="search" id="keySearchInput" placeholder="Cari no kunci / nama" />
+          <select id="statusFilterInput">
+            <option value="Semua">Semua</option>
+            <option value="Dipakai">Dipakai</option>
+            <option value="Kosong">Kosong</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>No Kunci</th>
+                <th>Status</th>
+                <th>Dipakai Oleh</th>
+                <th>Jam Masuk</th>
+                <th>Update Terakhir</th>
+              </tr>
+            </thead>
+            <tbody id="keysTableBody">
+              <tr>
+                <td colspan="5" class="empty-state">Data kunci akan muncul setelah backend disambungkan.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="membersPanel" class="hidden">
+        <div class="toolbar">
+          <input type="search" id="memberSearchInput" placeholder="Cari ID / nama / status" />
+          <button type="button" class="secondary-btn" id="refreshMembersBtn">Refresh Member</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID Member</th>
+                <th>Nama Member</th>
+                <th>Tanggal Daftar</th>
+                <th>Status</th>
+                <th>Diinput Oleh</th>
+                <th>Update Terakhir</th>
+              </tr>
+            </thead>
+            <tbody id="membersTableBody">
+              <tr>
+                <td colspan="6" class="empty-state">Data member lifetime akan muncul dari sheet <code>MEMBER_LIFETIME</code>.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
